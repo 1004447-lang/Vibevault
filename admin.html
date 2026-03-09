@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>VELYRA Admin</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body onload="init()">
+
+<header>
+<a href="/"><img src="images/logo.png" class="logo"></a>
+</header>
+
+<div class="container">
+
+<h1>Admin Dashboard</h1>
+
+<div id="stats"></div>
+
+<h2>Add Product</h2>
+
+<form id="addProduct">
+
+<input name="name" placeholder="Product Name" required>
+<input name="price" type="number" placeholder="Price" required>
+<input name="category" placeholder="Category" required>
+<input type="file" name="image" required>
+
+<button>Add Product</button>
+
+</form>
+
+<h2>Orders</h2>
+
+<div id="orders"></div>
+
+</div>
+
+<script>
+
+async function init(){
+loadStats()
+loadOrders()
+}
+
+async function loadStats(){
+
+const res=await fetch("/api/stats")
+const s=await res.json()
+
+document.getElementById("stats").innerHTML=`
+<p>Total Revenue: $${s.revenue}</p>
+<p>Total Orders: ${s.orders}</p>
+<p>Total Products: ${s.products}</p>
+<p>Total Visits: ${s.visits}</p>
+`
+
+}
+
+document.getElementById("addProduct").onsubmit=async e=>{
+
+e.preventDefault()
+
+const form=new FormData(e.target)
+
+await fetch("/api/products",{
+method:"POST",
+body:form
+})
+
+alert("Product added")
+
+}
+
+async function loadOrders(){
+
+const res=await fetch("/api/orders")
+const data=await res.json()
+
+const div=document.getElementById("orders")
+
+div.innerHTML=""
+
+data.forEach(o=>{
+
+div.innerHTML+=`
+<div style="border:1px solid #ccc;padding:10px;margin:10px">
+<b>${o.name}</b> (${o.email})<br>
+${o.address} ${o.country}<br>
+Total: $${o.total}<br>
+Status: ${o.status||"Processing"}<br>
+Tracking: ${o.tracking||"Not added"}<br>
+
+<input placeholder="Tracking Link" id="t${o.id}">
+<button onclick="addTracking(${o.id})">Send Tracking</button>
+
+</div>
+`
+
+})
+
+}
+
+async function addTracking(id){
+
+const tracking=document.getElementById("t"+id).value
+
+await fetch("/api/tracking",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id,tracking})
+})
+
+alert("Tracking sent to customer email")
+
+loadOrders()
+
+}
+
+</script>
+
+</body>
+</html>
